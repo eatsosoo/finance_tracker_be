@@ -13,3 +13,9 @@ bun run index.ts
 ```
 
 This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+
+To run migrations
+
+```bash
+bunx prisma migrate dev --name <migration-name>
+```

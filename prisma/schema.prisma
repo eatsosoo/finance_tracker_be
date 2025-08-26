@@ -8,15 +8,21 @@ datasource db {
 }
 
 model User {
-  id         Int        @id @default(autoincrement())
-  username   String     @unique
-  password   String
-  email      String     @unique
-  roles      Role[]     @relation("UserRoles")
-  accounts   Account[]
-  categories Category[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  password      String
+  email         String         @unique
+  roles         Role[]         @relation("UserRoles")
+  accounts      Account[]
+  categories    Category[]
+  sessions      Session[]
+  goals         Goal[]
+  events        Event[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@map("users")
 }
 
 model Role {
@@ -24,44 +30,118 @@ model Role {
   name        String       @unique
   permissions Permission[] @relation("RolePermissions")
   users       User[]       @relation("UserRoles")
+
+  @@map("roles")
 }
 
 model Permission {
   id    Int    @id @default(autoincrement())
   name  String @unique
   roles Role[] @relation("RolePermissions")
+
+  @@map("permissions")
 }
 
 model Account {
   id           Int           @id @default(autoincrement())
   name         String
   balance      Float         @default(0)
-  userId       Int
+  userId       Int           @map("user_id")
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("accounts")
 }
 
 model Category {
   id           Int           @id @default(autoincrement())
   title        String
-  userId       Int
+  userId       Int           @map("user_id")
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("categories")
 }
 
 model Transaction {
-  id         Int      @id @default(autoincrement())
-  type       String
-  amount     Float
-  note       String?
-  accountId  Int
-  account    Account  @relation(fields: [accountId], references: [id])
-  categoryId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           Int         @id @default(autoincrement())
+  type         String
+  amount       Decimal
+  note         String?
+  accountId    Int         @map("account_id")
+  account      Account     @relation(fields: [accountId], references: [id])
+  categoryId   Int         @map("category_id")
+  category     Category    @relation(fields: [categoryId], references: [id])
+  attachmentId Int?        @unique
+  attachment   Attachment? @relation(fields: [attachmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("transactions")
+}
+
+model Attachment {
+  id          Int          @id @default(autoincrement())
+  fileUrl     String       @map("file_url")
+  fileType    String       @map("file_type")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  Transaction Transaction?
+
+  @@map("attachments")
+}
+
+model Goal {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  title         String
+  targetAmount  Decimal  @map("target_amount")
+  currentAmount Decimal  @map("current_amount")
+  dueDate       DateTime @map("due_date")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("goals")
+}
+
+model Event {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  startTime     DateTime @map("start_time")
+  endTime       DateTime @map("end_time")
+  is_repetitive Boolean  @default(false)
+  notes         String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("events")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  is_read   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id])
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  revoked   Boolean   @default(false)
+
+  @@map("sessions")
 }

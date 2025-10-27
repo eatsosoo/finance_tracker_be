@@ -20,6 +20,6 @@
     "prisma": "^6.14.0"
   },
   "scripts": {
-    "dev": "bun run src/server.ts"
+    "dev": "bun run src/app/server.ts"
   }
 }

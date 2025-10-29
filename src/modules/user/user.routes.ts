@@ -1,12 +1,17 @@
 import { Hono } from "hono";
-import { createUser, deleteUser, detailUser, searchUsers, updateUser } from "@/modules/user/user.controller";
+import { create, remove, detail, search, update } from "@/modules/user/user.controller";
+import { authMiddleware } from "@/middlewares/auth.middleware";
 
 const user = new Hono();
 
-user.get("/users", searchUsers);
-user.get("/users/:id", detailUser);
-user.post("/users", createUser);
-user.put("/users/:id", updateUser);
-user.delete("/users/:id", deleteUser);
+// Middleware
+user.use("*", authMiddleware);
+
+// End points
+user.get("/users", search);
+user.get("/users/:id", detail);
+user.post("/users", create);
+user.put("/users/:id", update);
+user.delete("/users/:id", remove);
 
 export default user;

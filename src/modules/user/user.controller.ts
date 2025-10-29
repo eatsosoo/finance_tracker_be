@@ -5,11 +5,12 @@ import prisma from "@/lib/prisma";
 import { HTTP_STATUS } from "@/constants/httpStatus";
 import { errorResponse, successResponse } from "@/utils/response.utils";
 import { MESSAGES } from "@/constants/messages";
+import { userService } from "./user.service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
 // Create a new user
-export const createUser = async (c: Context) => {
+export const create = async (c: Context) => {
     try {
         const body = await c.req.json();
         const { email, password, username } = body;
@@ -41,18 +42,10 @@ export const createUser = async (c: Context) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // 4️⃣ Create user
-        const user = await prisma.user.create({
-            data: {
-                email,
-                password: hashedPassword,
-                username,
-            },
-            select: {
-                id: true,
-                email: true,
-                username: true,
-                createdAt: true,
-            },
+        const user = await userService.create({
+            email,
+            password: hashedPassword,
+            name: username || email.split("@")[0],
         });
 
         // 5️⃣ Generate JWT token
@@ -79,15 +72,13 @@ export const createUser = async (c: Context) => {
 };
 
 // Update a user
-export const updateUser = async (c: Context) => {
+export const update = async (c: Context) => {
     try {
         const userId = c.req.param("id"); // Lấy id từ URL /users/:id
         const body = await c.req.json();
 
         // Kiểm tra user tồn tại
-        const existingUser = await prisma.user.findUnique({
-            where: { id: parseInt(userId) },
-        });
+        const existingUser = await userService.findById(userId);
 
         if (!existingUser) {
             return errorResponse(
@@ -100,10 +91,7 @@ export const updateUser = async (c: Context) => {
         }
 
         // Cập nhật thông tin
-        const updatedUser = await prisma.user.update({
-            where: { id: parseInt(userId) },
-            data: body,
-        });
+        const updatedUser = await userService.update(userId, body);
 
         return successResponse(
             c,
@@ -123,13 +111,11 @@ export const updateUser = async (c: Context) => {
 };
 
 // Delete a user by ID
-export const deleteUser = async (c: Context) => {
+export const remove = async (c: Context) => {
     try {
         const userId = c.req.param("id");
         // Kiểm tra user tồn tại
-        const existingUser = await prisma.user.findUnique({
-            where: { id: parseInt(userId) },
-        });
+        const existingUser = await userService.findById(userId);
 
         if (!existingUser) {
             return errorResponse(
@@ -142,9 +128,7 @@ export const deleteUser = async (c: Context) => {
         }
 
         // Delete user
-        await prisma.user.delete({
-            where: { id: parseInt(userId) },
-        });
+        await userService.delete(userId);
 
         return successResponse(c, MESSAGES.USER.DELETED, null, HTTP_STATUS.OK);
     } catch (error: any) {
@@ -159,13 +143,11 @@ export const deleteUser = async (c: Context) => {
 };
 
 // Get detail user by ID
-export const detailUser = async (c: Context) => {
+export const detail = async (c: Context) => {
     try {
         const userId = c.req.param("id");
         // Kiểm tra user tồn tại
-        const existingUser = await prisma.user.findUnique({
-            where: { id: parseInt(userId) },
-        });
+        const existingUser = await userService.findById(userId);
 
         if (!existingUser) {
             return errorResponse(
@@ -195,7 +177,7 @@ export const detailUser = async (c: Context) => {
 };
 
 // Search users by email, username and sort
-export const searchUsers = async (c: Context) => {
+export const search = async (c: Context) => {
     try {
         // Lấy query params
         const perPage = parseInt(c.req.query("per_page") || "10");
